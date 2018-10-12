@@ -15,7 +15,7 @@ class Window(QWidget):
     def __init__(self):
         super(Window, self).__init__()
 
-        self.glWidget = GLWidget()
+        self.glWidget = MakeGLWidget()
 
         # create each slider
         self.xSlider = self.createSlider()
@@ -57,13 +57,13 @@ class Window(QWidget):
         return slider
 
 
-class GLWidget(QOpenGLWidget):
+class MakeGLWidget(QOpenGLWidget):
     xRotationChanged = pyqtSignal(int)
     yRotationChanged = pyqtSignal(int)
     zRotationChanged = pyqtSignal(int)
 
     def __init__(self, parent=None):
-        super(GLWidget, self).__init__(parent)
+        super(MakeGLWidget, self).__init__(parent)
 
         self.object = 0
         self.xRot = 0
@@ -126,8 +126,7 @@ class GLWidget(QOpenGLWidget):
         gl.glEnable(gl.GL_CULL_FACE)
 
     def paintGL(self):
-        gl.glClear(
-            gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
         gl.glTranslated(0.0, 0.0, -10.0)
         gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
