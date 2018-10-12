@@ -136,15 +136,21 @@ class GLWidget(QOpenGLWidget):
         gl.glCallList(self.object)
 
     def resizeGL(self, width, height):
-        side = min(width, height)
-        if side < 0:
-            return
+        # get the smallest edge
+        minSide = min(width, height)
+        # the default x and y spans -.5 to .5
+        xRange = yRange = 0.5
 
-        gl.glViewport((width - side) // 2, (height - side) // 2, side, side)
+        # distort the Orthographic view so that it maintains the same aspect
+        # ratio for the elements in the screen
+        if width > height:
+            xRange = (width / height) * yRange
+        else:
+            yRange = (height / width) * xRange
 
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(-0.5, +0.5, +0.5, -0.5, 4.0, 15.0)
+        gl.glOrtho(-xRange, xRange, -yRange, yRange, 0.01, 1000.)
         gl.glMatrixMode(gl.GL_MODELVIEW)
 
     def mousePressEvent(self, event):
