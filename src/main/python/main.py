@@ -5,8 +5,7 @@ import math
 
 from PyQt5.QtCore import pyqtSignal, QPoint, QSize, Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QOpenGLWidget, QSlider,
-                             QWidget)
+from PyQt5.QtWidgets import *
 
 import OpenGL.GL as gl
 
@@ -40,9 +39,9 @@ class Window(QWidget):
         self.setLayout(mainLayout)
 
         # set the starting values of the slider
-        self.xSlider.setValue(500)
-        self.ySlider.setValue(2000)
-        self.zSlider.setValue(0)
+        self.xSlider.setValue(292 * 16)
+        self.ySlider.setValue(179 * 16)
+        self.zSlider.setValue(44  * 16)
 
         self.setWindowTitle("glman")
 
@@ -73,7 +72,7 @@ class GLWidget(QOpenGLWidget):
 
         self.lastPos = QPoint()
 
-        self.backgroundColor = QColor.fromCmykF(0.0, 0.0, 0.0, 0.0)
+        self.backgroundColor = QColor.fromCmykF(0.0, 0.0, 0.0, 1.0)
 
     def getOpenglInfo(self):
         info = """
@@ -121,7 +120,7 @@ class GLWidget(QOpenGLWidget):
         print(self.getOpenglInfo())
 
         self.setClearColor(self.backgroundColor.darker())
-        self.object = self.MjbWireBox(.5, .5, -.5)
+        self.object = self.Arrow()
         gl.glShadeModel(gl.GL_SMOOTH)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_CULL_FACE)
@@ -164,34 +163,46 @@ class GLWidget(QOpenGLWidget):
 
         self.lastPos = event.pos()
 
-    def MjbWireBox(self, dx, dy, dz):
+    def Arrow(self):
         genList = gl.glGenLists(1)
         gl.glNewList(genList, gl.GL_COMPILE)
 
-        dx /= 2.0
-        dy /= 2.0
-        dz /= 2.0
-
-        gl.glBegin(gl.GL_LINE_STRIP)
-        gl.glVertex3f(-dx, -dy, -dz)
-        gl.glVertex3f(dx, -dy, -dz)
-        gl.glVertex3f(dx, dy, -dz)
-        gl.glVertex3f(-dx, dy, -dz)
-        gl.glVertex3f(-dx, -dy, -dz)
-        gl.glVertex3f(-dx, -dy, dz)
-        gl.glVertex3f(dx, -dy, dz)
-        gl.glVertex3f(dx, dy, dz)
-        gl.glVertex3f(-dx, dy, dz)
-        gl.glVertex3f(-dx, -dy, dz)
-        gl.glEnd()
+        dx = .5
+        dy = .5
+        dz = .5
 
         gl.glBegin(gl.GL_LINES)
-        gl.glVertex3f(dx, -dy, -dz)
-        gl.glVertex3f(dx, -dy, dz)
-        gl.glVertex3f(dx, dy, -dz)
-        gl.glVertex3f(dx, dy, dz)
-        gl.glVertex3f(-dx, dy, -dz)
-        gl.glVertex3f(-dx, dy, dz)
+
+        # red +x
+        gl.glColor(1, 0, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(dx, 0, 0)
+
+        # dark red -x
+        gl.glColor(.2, 0, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(-dx, 0, 0)
+
+        # green +y
+        gl.glColor(0, 1, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(0, dy, 0)
+
+        # dark red -y
+        gl.glColor(0, .2, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(0, -dy, 0)
+
+        # blue z
+        gl.glColor(0, 0, 1)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(0, 0, dz)
+
+        # dark blue -z
+        gl.glColor(0, 0, .2)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(0, 0, -dz)
+
         gl.glEnd()
         gl.glEndList()
 
