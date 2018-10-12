@@ -30,12 +30,31 @@ class Window(QWidget):
         self.zSlider.valueChanged.connect(self.glWidget.setZRotation)
         self.glWidget.zRotationChanged.connect(self.zSlider.setValue)
 
-        # add the widgets to the menu
+        # create our main layout
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.glWidget)
-        mainLayout.addWidget(self.xSlider)
-        mainLayout.addWidget(self.ySlider)
-        mainLayout.addWidget(self.zSlider)
+
+        # expand the glWidget to fill all available space
+        self.glWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # add in a vertical layout for all our controls
+        controlBar = QVBoxLayout()
+
+        # a horizontal layout for some check boxes
+        checkBoxes = QHBoxLayout()
+        checkBoxes.addWidget(self.makeCheckBox("Axes"))
+        checkBoxes.addWidget(self.makeCheckBox("Orthographic"))
+        controlBar.addLayout(checkBoxes)
+
+        controlBar.addWidget(QPushButton("Load GLIB File"))
+        controlBar.addWidget(self.xSlider)
+        controlBar.addWidget(self.ySlider)
+        controlBar.addWidget(self.zSlider)
+
+        # add the vertical layout
+        mainLayout.addLayout(controlBar)
+
+        # set our main layout for the window
         self.setLayout(mainLayout)
 
         # set the starting values of the slider
@@ -45,14 +64,22 @@ class Window(QWidget):
 
         self.setWindowTitle("glman")
 
+    def makeCheckBox(self, label):
+        checkBox = QCheckBox(label)
+        # make the text white
+        checkBox.setStyleSheet("""
+            QCheckBox {
+               border: none;
+               color: white;
+            }""")
+        return checkBox
+
     def createSlider(self):
-        slider = QSlider(Qt.Vertical)
+        slider = QSlider(Qt.Horizontal)
 
         slider.setRange(0, 360 * 16)
         slider.setSingleStep(16)
         slider.setPageStep(15 * 16)
-        slider.setTickInterval(15 * 16)
-        slider.setTickPosition(QSlider.TicksRight)
 
         return slider
 
@@ -90,10 +117,10 @@ class MakeGLWidget(QOpenGLWidget):
         return info
 
     def minimumSizeHint(self):
-        return QSize(50, 50)
+        return QSize(150, 150)
 
     def sizeHint(self):
-        return QSize(400, 400)
+        return QSize(4000, 4000)
 
     def setXRotation(self, angle):
         angle = self.normalizeAngle(angle)
