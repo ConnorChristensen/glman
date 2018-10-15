@@ -92,7 +92,7 @@ class MakeGLWidget(QOpenGLWidget):
     def __init__(self, parent=None):
         super(MakeGLWidget, self).__init__(parent)
 
-        self.object = 0
+        self.axes = 0
         self.xRot = 0
         self.yRot = 0
         self.zRot = 0
@@ -147,7 +147,8 @@ class MakeGLWidget(QOpenGLWidget):
         print(self.getOpenglInfo())
 
         self.setClearColor(self.backgroundColor.darker())
-        self.object = self.Arrow()
+        # create an arrows object (call list)
+        self.axes = self.Arrow()
         gl.glShadeModel(gl.GL_SMOOTH)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_CULL_FACE)
@@ -159,7 +160,7 @@ class MakeGLWidget(QOpenGLWidget):
         gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
         gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
         gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-        gl.glCallList(self.object)
+        gl.glCallList(self.axes)
 
     def resizeGL(self, width, height):
         # get the smallest edge
