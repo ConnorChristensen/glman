@@ -42,7 +42,14 @@ class Window(QWidget):
 
         # a horizontal layout for some check boxes
         checkBoxes = QHBoxLayout()
-        checkBoxes.addWidget(self.makeCheckBox("Axes"))
+
+        # create an axes box and connect a state changed listener to the
+        # glWidget
+        self.axesCheckbox = self.makeCheckBox("Axes")
+        self.axesCheckbox.setCheckState(Qt.Checked)
+        self.axesCheckbox.stateChanged.connect(self.glWidget.toggleAxes)
+
+        checkBoxes.addWidget(self.axesCheckbox)
         checkBoxes.addWidget(self.makeCheckBox("Orthographic"))
         controlBar.addLayout(checkBoxes)
 
@@ -85,6 +92,7 @@ class Window(QWidget):
 
 
 class MakeGLWidget(QOpenGLWidget):
+    # these are signals that are emitted to make connections
     xRotationChanged = pyqtSignal(int)
     yRotationChanged = pyqtSignal(int)
     zRotationChanged = pyqtSignal(int)
@@ -96,6 +104,7 @@ class MakeGLWidget(QOpenGLWidget):
         self.xRot = 0
         self.yRot = 0
         self.zRot = 0
+        self.axesOn = 2
 
         self.lastPos = QPoint()
 
@@ -121,6 +130,10 @@ class MakeGLWidget(QOpenGLWidget):
 
     def sizeHint(self):
         return QSize(4000, 4000)
+
+    def toggleAxes(self, value):
+        self.axesOn = value
+        self.update()
 
     def setXRotation(self, angle):
         angle = self.normalizeAngle(angle)
@@ -160,7 +173,9 @@ class MakeGLWidget(QOpenGLWidget):
         gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
         gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
         gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-        gl.glCallList(self.axes)
+        # if the box is checked
+        if (self.axesOn == 2):
+            gl.glCallList(self.axes)
 
     def resizeGL(self, width, height):
         # get the smallest edge
