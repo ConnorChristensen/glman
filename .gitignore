@@ -1,2 +1,3 @@
 venv/
 src/main/python/__pycache__/
+.DS_Store
