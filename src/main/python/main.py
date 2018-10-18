@@ -7,6 +7,17 @@ from PyQt5.QtCore import pyqtSignal, QPoint, QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import *
 
+# the following should not be happening and is some kind of scoping issue
+# TODO: only import the shapes library once
+# this is so we can call the functions
+from shapes import *
+# this is so we can scan the functions
+import shapes
+
+# an inspecting function that will allow us to get all functions in a file
+# as a list
+import inspect
+
 import OpenGL.GL as gl
 
 
@@ -53,7 +64,10 @@ class Window(QWidget):
         checkBoxes.addWidget(self.makeCheckBox("Orthographic"))
         controlBar.addLayout(checkBoxes)
 
-        controlBar.addWidget(QPushButton("Load GLIB File"))
+        loadGlibButton = QPushButton("Load GLIB File")
+        loadGlibButton.clicked.connect(self.glWidget.loadGLIB)
+
+        controlBar.addWidget(loadGlibButton)
         controlBar.addWidget(self.xSlider)
         controlBar.addWidget(self.ySlider)
         controlBar.addWidget(self.zSlider)
@@ -108,6 +122,13 @@ class MakeGLWidget(QOpenGLWidget):
 
         self.lastPos = QPoint()
 
+        self.glibFile = ""
+        self.glibContents = ""
+
+        # get all functions in the shapes module
+        self.availableShapes = inspect.getmembers(shapes, inspect.isfunction)
+        self.availableShapes = [i[0] for i in self.availableShapes]
+
         self.backgroundColor = QColor.fromCmykF(0.0, 0.0, 0.0, 1.0)
 
     def getOpenglInfo(self):
@@ -133,6 +154,31 @@ class MakeGLWidget(QOpenGLWidget):
 
     def toggleAxes(self, value):
         self.axesOn = value
+        self.update()
+
+    def glibCommandToFunction(self, command):
+        # get the function name
+        function = command[0] + "("
+        # start at the first argument and add in all the arguments that
+        # have a comma after them
+        for x in range(1,len(command) - 1):
+            function += command[x]
+            function += ","
+        # add in the last argument with a closing parenthisis
+        function += command[-1] + ")"
+        return function
+
+    def loadGLIB(self):
+        dialog = QFileDialog()
+        # it returns a tuple with the path and the filter type
+        self.glibFile = dialog.getOpenFileName()[0]
+        # read our glib file
+        with open(self.glibFile) as f:
+            self.glibContents = f.readlines()
+        # trim whitespace off the ends of strings
+        self.glibContents = [x.strip() for x in self.glibContents]
+        # split each argument by whitespace
+        self.glibContents = [x.split() for x in self.glibContents]
         self.update()
 
     def setXRotation(self, angle):
@@ -166,16 +212,32 @@ class MakeGLWidget(QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_CULL_FACE)
 
+    # every time the screen reloads
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
-        gl.glTranslated(0.0, 0.0, -10.0)
-        gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-        gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-        gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-        # if the box is checked
-        if (self.axesOn == 2):
-            gl.glCallList(self.axes)
+
+        # if we never loaded in a glib file
+        if self.glibFile == "":
+            gl.glTranslated(0.0, 0.0, -10.0)
+            gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
+            gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
+            gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+            # if the box is checked
+            if (self.axesOn == 2):
+                gl.glCallList(self.axes)
+        else:
+            gl.glTranslated(0.0, 0.0, -10.0)
+            gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
+            gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
+            gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+            # if the box is checked
+            if (self.axesOn == 2):
+                gl.glCallList(self.axes)
+            for command in self.glibContents:
+                if command[0] in self.availableShapes:
+                    function = self.glibCommandToFunction(command)
+                    gl.glCallList(eval(function))
 
     def resizeGL(self, width, height):
         # get the smallest edge
