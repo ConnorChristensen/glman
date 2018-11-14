@@ -235,6 +235,15 @@ class MakeGLWidget(QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_CULL_FACE)
 
+    def evaluateShape(self, command):
+        function = self.glibCommandToFunction(command)
+        gl.glCallList(eval(function))
+
+    def evaluateCommand(self, command):
+        # if it is a shape
+        if command[0] in self.availableShapes:
+            self.evaluateShape(command)
+
     # every time the screen reloads
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -270,9 +279,7 @@ class MakeGLWidget(QOpenGLWidget):
             self.shaderProgram.bind()
 
             for command in self.glibContents:
-                if command[0] in self.availableShapes:
-                    function = self.glibCommandToFunction(command)
-                    gl.glCallList(eval(function))
+                self.evaluateCommand(command)
 
     def resizeGL(self, width, height):
         # get the smallest edge
