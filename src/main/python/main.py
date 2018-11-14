@@ -3,8 +3,8 @@
 import sys
 import math
 
-from PyQt5.QtCore import pyqtSignal, QPoint, QSize, Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 # the following should not be happening and is some kind of scoping issue
@@ -120,6 +120,8 @@ class MakeGLWidget(QOpenGLWidget):
         self.zRot = 0
         self.axesOn = 2
 
+        self.programOn = False
+
         self.lastPos = QPoint()
 
         self.glibFile = ""
@@ -179,6 +181,18 @@ class MakeGLWidget(QOpenGLWidget):
         self.glibContents = [x.strip() for x in self.glibContents]
         # split each argument by whitespace
         self.glibContents = [x.split() for x in self.glibContents]
+
+        for line in self.glibContents:
+            if line[0] == 'Vertex':
+                self.vertexFile = line[1] + '.vert'
+                print("Loaded ", self.vertexFile)
+                self.vertOn = True
+            if line[0] == 'Fragment':
+                self.fragmentFile = line[1] + '.frag'
+                print("Loaded ", self.fragmentFile)
+                self.fragOn = True
+
+        self.programOn = True
         self.update()
 
     def setXRotation(self, angle):
@@ -216,6 +230,14 @@ class MakeGLWidget(QOpenGLWidget):
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
+
+        if (self.programOn):
+            # http://doc.qt.io/qt-5/qopenglshaderprogram.html
+            self.shaderProgram = QOpenGLShaderProgram()
+            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Vertex, self.vertexFile)
+            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Fragment, self.fragmentFile)
+            self.shaderProgram.link()
+            self.shaderProgram.bind()
 
         # if we never loaded in a glib file
         if self.glibFile == "":
