@@ -240,14 +240,6 @@ class MakeGLWidget(QOpenGLWidget):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
 
-        if (self.programOn):
-            # http://doc.qt.io/qt-5/qopenglshaderprogram.html
-            self.shaderProgram = QOpenGLShaderProgram()
-            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Vertex, self.vertexFile)
-            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Fragment, self.fragmentFile)
-            self.shaderProgram.link()
-            self.shaderProgram.bind()
-
         # if we never loaded in a glib file
         if self.glibFile == "":
             gl.glTranslated(0.0, 0.0, -10.0)
@@ -258,13 +250,25 @@ class MakeGLWidget(QOpenGLWidget):
             if (self.axesOn == 2):
                 gl.glCallList(self.axes)
         else:
+            # http://doc.qt.io/qt-5/qopenglshaderprogram.html
+            self.shaderProgram = QOpenGLShaderProgram()
+            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Vertex, self.vertexFile)
+            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Fragment, self.fragmentFile)
+            # don't bind the shader just yet. We need to draw the axes first
+            self.shaderProgram.release()
+
             gl.glTranslated(0.0, 0.0, -10.0)
             gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
             gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
             gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-            # if the box is checked
+
+            # if the box is checked for axes on
             if (self.axesOn == 2):
                 gl.glCallList(self.axes)
+
+            # bind the shader program
+            self.shaderProgram.bind()
+
             for command in self.glibContents:
                 if command[0] in self.availableShapes:
                     function = self.glibCommandToFunction(command)
