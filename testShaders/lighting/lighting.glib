@@ -1,0 +1,3 @@
+Vertex testShaders/lighting/lighting
+Fragment testShaders/lighting/lighting
+cube .5 .5 .5
