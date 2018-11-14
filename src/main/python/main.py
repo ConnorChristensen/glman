@@ -65,9 +65,13 @@ class Window(QWidget):
         controlBar.addLayout(checkBoxes)
 
         loadGlibButton = QPushButton("Load GLIB File")
-        loadGlibButton.clicked.connect(self.glWidget.loadGLIB)
+        loadGlibButton.clicked.connect(self.glWidget.getGLIB)
+
+        reloadGlibButton = QPushButton("Reload GLIB File")
+        reloadGlibButton.clicked.connect(self.glWidget.loadGLIB)
 
         controlBar.addWidget(loadGlibButton)
+        controlBar.addWidget(reloadGlibButton)
         controlBar.addWidget(self.xSlider)
         controlBar.addWidget(self.ySlider)
         controlBar.addWidget(self.zSlider)
@@ -170,10 +174,15 @@ class MakeGLWidget(QOpenGLWidget):
         function += command[-1] + ")"
         return function
 
-    def loadGLIB(self):
+    def getGLIB(self):
+        # prompt the user for the file location
         dialog = QFileDialog()
         # it returns a tuple with the path and the filter type
         self.glibFile = dialog.getOpenFileName()[0]
+        # now that we have the glib location, load it in
+        self.loadGLIB()
+
+    def loadGLIB(self):
         # read our glib file
         with open(self.glibFile) as f:
             self.glibContents = f.readlines()
