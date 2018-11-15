@@ -20,6 +20,17 @@ import inspect
 
 import OpenGL.GL as gl
 
+def parseGLIB(glibFile):
+    # read our glib file
+    with open(glibFile) as f:
+        glibContents = f.readlines()
+    # trim whitespace off the ends of strings
+    glibContents = [x.strip() for x in glibContents]
+    # split each argument by whitespace
+    glibContents = [x.split() for x in glibContents]
+    # remove all empty lines
+    glibContents = [x for x in glibContents if x != []]
+    return glibContents
 
 class Window(QWidget):
 
@@ -48,6 +59,20 @@ class Window(QWidget):
         # expand the glWidget to fill all available space
         self.glWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # add the vertical layout
+        mainLayout.addLayout(self.makeControlBar())
+
+        # set our main layout for the window
+        self.setLayout(mainLayout)
+
+        # set the starting values of the slider
+        self.xSlider.setValue(292 * 16)
+        self.ySlider.setValue(179 * 16)
+        self.zSlider.setValue(44  * 16)
+
+        self.setWindowTitle("glman")
+
+    def makeControlBar(self):
         # add in a vertical layout for all our controls
         controlBar = QVBoxLayout()
 
@@ -65,7 +90,7 @@ class Window(QWidget):
         controlBar.addLayout(checkBoxes)
 
         loadGlibButton = QPushButton("Load GLIB File")
-        loadGlibButton.clicked.connect(self.glWidget.getGLIB)
+        loadGlibButton.clicked.connect(self.getGLIB)
 
         reloadGlibButton = QPushButton("Reload GLIB File")
         reloadGlibButton.clicked.connect(self.glWidget.loadGLIB)
@@ -75,19 +100,7 @@ class Window(QWidget):
         controlBar.addWidget(self.xSlider)
         controlBar.addWidget(self.ySlider)
         controlBar.addWidget(self.zSlider)
-
-        # add the vertical layout
-        mainLayout.addLayout(controlBar)
-
-        # set our main layout for the window
-        self.setLayout(mainLayout)
-
-        # set the starting values of the slider
-        self.xSlider.setValue(292 * 16)
-        self.ySlider.setValue(179 * 16)
-        self.zSlider.setValue(44  * 16)
-
-        self.setWindowTitle("glman")
+        return controlBar
 
     def makeCheckBox(self, label):
         checkBox = QCheckBox(label)
@@ -108,6 +121,14 @@ class Window(QWidget):
 
         return slider
 
+    def getGLIB(self):
+        # prompt the user for the file location
+        dialog = QFileDialog()
+        # it returns a tuple with the path and the filter type
+        self.glibFile = dialog.getOpenFileName()[0]
+        self.glibContents = parseGLIB(self.glibFile)
+        # now that we have the glib location, load it in
+        self.glWidget.loadGLIB(self.glibFile)
 
 class MakeGLWidget(QOpenGLWidget):
     # these are signals that are emitted to make connections
@@ -174,22 +195,9 @@ class MakeGLWidget(QOpenGLWidget):
         function += command[-1] + ")"
         return function
 
-    def getGLIB(self):
-        # prompt the user for the file location
-        dialog = QFileDialog()
-        # it returns a tuple with the path and the filter type
-        self.glibFile = dialog.getOpenFileName()[0]
-        # now that we have the glib location, load it in
-        self.loadGLIB()
-
-    def loadGLIB(self):
-        # read our glib file
-        with open(self.glibFile) as f:
-            self.glibContents = f.readlines()
-        # trim whitespace off the ends of strings
-        self.glibContents = [x.strip() for x in self.glibContents]
-        # split each argument by whitespace
-        self.glibContents = [x.split() for x in self.glibContents]
+    def loadGLIB(self, glibFile):
+        self.glibFile = glibFile
+        self.glibContents = parseGLIB(glibFile)
 
         for line in self.glibContents:
             if line[0] == 'Vertex':
