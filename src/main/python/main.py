@@ -20,6 +20,7 @@ import inspect
 
 import OpenGL.GL as gl
 
+# returns a list of lines, each line split by white space into a list
 def parseGLIB(glibFile):
     # read our glib file
     with open(glibFile) as f:
@@ -31,6 +32,52 @@ def parseGLIB(glibFile):
     # remove all empty lines
     glibContents = [x for x in glibContents if x != []]
     return glibContents
+
+def parseUniformVariables(glibContents):
+    # a list of all our programs
+    programs = []
+    # the current program number we are on
+    programNumber = 0
+    # a flag to let us know if we are currently in a program scope (aka. between brackets)
+    inProgram = False
+
+    for line in glibContents:
+        # if we find an open bracket at the begining of a line, throw an error
+        if line[0] == "{":
+            print("""
+                Error: Unexpected open bracket.
+                Please place your opening brackets at the end of your program line""")
+            exit(1)
+
+        # if we got to a program
+        if line[0] == "Program":
+            programs.append({})
+            # get our program name
+            programs[programNumber]["name"] = line[1]
+            programs[programNumber]["variables"] = []
+            # if the user opened up a scope, that means they are going to have
+            # uniform variables that we are going to use in our program
+            if line[2] == "{":
+                inProgram = True
+                # move on to the next line
+                continue
+
+        if line[0] == "}":
+            inProgram = False
+            programNumber += 1
+
+        if inProgram:
+            # store the name, min default and max values
+            programs[programNumber]["variables"].append({
+                "name": line[0],
+                # remove the opening <
+                "min": float(line[1][1:]),
+                "default": float(line[2]),
+                # remove the closing >
+                "max": float(line[3][:-1])
+            })
+    return programs
+
 
 class Window(QWidget):
 
