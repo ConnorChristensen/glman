@@ -86,19 +86,6 @@ class Window(QWidget):
 
         self.glWidget = MakeGLWidget()
 
-        # create each slider
-        self.xSlider = self.createSlider()
-        self.ySlider = self.createSlider()
-        self.zSlider = self.createSlider()
-
-        # connect a value changed listener to the sliders
-        self.xSlider.valueChanged.connect(self.glWidget.setXRotation)
-        self.glWidget.xRotationChanged.connect(self.xSlider.setValue)
-        self.ySlider.valueChanged.connect(self.glWidget.setYRotation)
-        self.glWidget.yRotationChanged.connect(self.ySlider.setValue)
-        self.zSlider.valueChanged.connect(self.glWidget.setZRotation)
-        self.glWidget.zRotationChanged.connect(self.zSlider.setValue)
-
         # create our main layout
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.glWidget)
@@ -112,14 +99,28 @@ class Window(QWidget):
         # set our main layout for the window
         self.setLayout(mainLayout)
 
-        # set the starting values of the slider
-        self.xSlider.setValue(292 * 16)
-        self.ySlider.setValue(179 * 16)
-        self.zSlider.setValue(44  * 16)
-
         self.setWindowTitle("glman")
 
-    def makeControlBar(self):
+    def makeControlBar(self, programs=[]):
+        # create each slider
+        self.xSlider = self.createSlider(0, 360 * 16)
+        self.ySlider = self.createSlider(0, 360 * 16)
+        self.zSlider = self.createSlider(0, 360 * 16)
+        # self.zSlider = self.createSlider(0, 360 * 16, 16, 15 * 16)
+
+        # connect a value changed listener to the sliders
+        self.xSlider.valueChanged.connect(self.glWidget.setXRotation)
+        self.glWidget.xRotationChanged.connect(self.xSlider.setValue)
+        self.ySlider.valueChanged.connect(self.glWidget.setYRotation)
+        self.glWidget.yRotationChanged.connect(self.ySlider.setValue)
+        self.zSlider.valueChanged.connect(self.glWidget.setZRotation)
+        self.glWidget.zRotationChanged.connect(self.zSlider.setValue)
+
+        # set the value of the slider now that they are linked
+        self.xSlider.setValue(23  * 16)
+        self.ySlider.setValue(315 * 16)
+        self.zSlider.setValue(1   * 16)
+
         # add in a vertical layout for all our controls
         controlBar = QVBoxLayout()
 
@@ -159,13 +160,9 @@ class Window(QWidget):
             }""")
         return checkBox
 
-    def createSlider(self):
+    def createSlider(self, start, end):
         slider = QSlider(Qt.Horizontal)
-
-        slider.setRange(0, 360 * 16)
-        slider.setSingleStep(16)
-        slider.setPageStep(15 * 16)
-
+        slider.setRange(start, end)
         return slider
 
     def getGLIB(self):
@@ -174,6 +171,8 @@ class Window(QWidget):
         # it returns a tuple with the path and the filter type
         self.glibFile = dialog.getOpenFileName()[0]
         self.glibContents = parseGLIB(self.glibFile)
+        self.makeControlBar(parseUniformVariables(self.glibContents))
+
         # now that we have the glib location, load it in
         self.glWidget.loadGLIB(self.glibFile)
 
