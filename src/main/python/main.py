@@ -87,26 +87,27 @@ class Window(QWidget):
         self.glWidget = MakeGLWidget()
 
         # create our main layout
-        mainLayout = QHBoxLayout()
-        mainLayout.addWidget(self.glWidget)
+        self.mainLayout = QHBoxLayout()
+        self.mainLayout.addWidget(self.glWidget)
 
         # expand the glWidget to fill all available space
         self.glWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        self.controlBar = self.makeControlBar()
+
         # add the vertical layout
-        mainLayout.addLayout(self.makeControlBar())
+        self.mainLayout.addLayout(self.controlBar)
 
         # set our main layout for the window
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
 
         self.setWindowTitle("glman")
 
-    def makeControlBar(self, programs=[]):
+    def makeControlBar(self):
         # create each slider
         self.xSlider = self.createSlider(0, 360 * 16)
         self.ySlider = self.createSlider(0, 360 * 16)
         self.zSlider = self.createSlider(0, 360 * 16)
-        # self.zSlider = self.createSlider(0, 360 * 16, 16, 15 * 16)
 
         # connect a value changed listener to the sliders
         self.xSlider.valueChanged.connect(self.glWidget.setXRotation)
@@ -150,6 +151,41 @@ class Window(QWidget):
         controlBar.addWidget(self.zSlider)
         return controlBar
 
+    def addSliders(self, programs):
+        variableSliders = []
+        sliderLabels = []
+
+        # for every program we have
+        for program in programs:
+            for key, value in program.items():
+                # if we see variables
+                if key == "variables":
+                    for variable in value:
+                        # make a slider with a min and max value
+                        slider = self.createSlider(variable["min"], variable["max"])
+                        # set the slider to the default variable
+                        slider.setValue(variable["default"])
+                        # make a label for our slider
+                        label = QLabel()
+                        # set our label name
+                        label.setText(variable["name"])
+                        # make the text white and center it on the menu
+                        label.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+
+                        # add the label and slider to their respective arrays
+                        sliderLabels.append(label)
+                        variableSliders.append(slider)
+
+        # just in case we have an uneven number of sliders and labels
+        if len(variableSliders) != len(sliderLabels):
+            print("Error: the number of sliders and labels do not match")
+            exit(1)
+
+        # for every slider and label
+        for x in range(0,len(variableSliders)):
+            self.controlBar.addWidget(sliderLabels[x])
+            self.controlBar.addWidget(variableSliders[x])
+
     def makeCheckBox(self, label):
         checkBox = QCheckBox(label)
         # make the text white
@@ -171,7 +207,7 @@ class Window(QWidget):
         # it returns a tuple with the path and the filter type
         self.glibFile = dialog.getOpenFileName()[0]
         self.glibContents = parseGLIB(self.glibFile)
-        self.makeControlBar(parseUniformVariables(self.glibContents))
+        self.addSliders(parseUniformVariables(self.glibContents))
 
         # now that we have the glib location, load it in
         self.glWidget.loadGLIB(self.glibFile)
