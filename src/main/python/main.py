@@ -2,6 +2,7 @@
 
 import sys
 import math
+import os
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -72,7 +73,7 @@ def parseUniformVariables(glibContents):
                 "name": line[0],
                 # remove the opening <
                 "min": float(line[1][1:]),
-                "default": float(line[2]),
+                "value": float(line[2]),
                 # remove the closing >
                 "max": float(line[3][:-1])
             })
@@ -136,8 +137,8 @@ class Window(QWidget):
         self.axisCheckbox.setCheckState(Qt.Checked)
         self.axisCheckbox.stateChanged.connect(self.glWidget.toggleAxes)
 
-        checkBoxes.addWidget(self.makeCheckBox("Orthographic"))
         checkBoxes.addWidget(self.axisCheckbox)
+        # checkBoxes.addWidget(self.makeCheckBox("Orthographic"))
         controlBar.addLayout(checkBoxes)
 
         loadGlibButton = QPushButton("Load GLIB File")
@@ -157,6 +158,8 @@ class Window(QWidget):
         variableSliders = []
         sliderLabels = []
 
+        programNumber = 0
+
         # for every program we have
         for program in programs:
             for key, value in program.items():
@@ -164,9 +167,9 @@ class Window(QWidget):
                 if key == "variables":
                     for variable in value:
                         # make a slider with a min and max value
-                        slider = self.createSlider(variable["min"], variable["max"])
+                        slider = self.createSlider(variable["min"], variable["max"]*100)
                         # set the slider to the default variable
-                        slider.setValue(variable["default"])
+                        slider.setValue(variable["value"])
                         # make a label for our slider
                         label = QLabel()
                         # set our label name
@@ -174,9 +177,14 @@ class Window(QWidget):
                         # make the text white and center it on the menu
                         label.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
 
+                        # define the program and variable names as variables
+                        variableName = variable["name"]
+                        # this is a tricky line, so it is in the readme
+                        slider.valueChanged.connect( lambda newValue, programNumber=programNumber, variableName=variableName: self.glWidget.setUniformVariable(programNumber, variableName, newValue) )
                         # add the label and slider to their respective arrays
                         sliderLabels.append(label)
                         variableSliders.append(slider)
+            programNumber += 1
 
         # just in case we have an uneven number of sliders and labels
         if len(variableSliders) != len(sliderLabels):
@@ -230,6 +238,7 @@ class MakeGLWidget(QOpenGLWidget):
             "y": 0,
             "z": 0
         }
+        self.uniformVariables = {}
 
         self.axisOn = 2
 
@@ -297,9 +306,16 @@ class MakeGLWidget(QOpenGLWidget):
                 print("Loaded ", self.fragmentFile)
                 self.fragOn = True
 
+        self.uniformVariables = parseUniformVariables(self.glibContents)
+
         self.programOn = True
         self.update()
 
+    def setUniformVariable(self, program, variableName, value):
+        for variable in self.uniformVariables[program]["variables"]:
+            if variable["name"] == variableName:
+                variable["value"] = value;
+        self.update()
 
     def setRotation(self, axis, angle):
         angle = self.normalizeAngle(angle)
@@ -341,6 +357,68 @@ class MakeGLWidget(QOpenGLWidget):
             # call the command associated with that shape
             self.evaluateShape(command)
 
+    def createProgram(self, shaderList):
+        program = gl.glCreateProgram()
+
+        for shader in shaderList:
+            gl.glAttachShader(program, shader)
+
+        gl.glLinkProgram(program)
+
+        status = gl.glGetProgramiv(program, gl.GL_LINK_STATUS)
+        if status == gl.GL_FALSE:
+            # Note that getting the error log is much simpler in Python than in C/C++
+            # and does not require explicit handling of the string buffer
+            strInfoLog = gl.glGetProgramInfoLog(program)
+            print("Linker failure: \n" + strInfoLog)
+
+        for shader in shaderList:
+            gl.glDetachShader(program, shader)
+
+        return program
+
+    def findFileOrThrow(self, strBasename):
+        # Keep constant names in C-style convention, for readability
+        # when comparing to C(/C++) code.
+        strFilename = "." + os.sep + strBasename
+        if os.path.isfile(strFilename):
+            return strFilename
+
+        raise IOError('Could not find target file ' + strBasename)
+
+    def loadShader(self, shaderType, shaderFile):
+        # check if file exists, get full path name
+        strFilename = self.findFileOrThrow(shaderFile)
+        shaderData = None
+        with open(strFilename, 'r') as f:
+            shaderData = f.read()
+
+        shader = gl.glCreateShader(shaderType)
+        gl.glShaderSource(shader, shaderData) # note that this is a simpler function call than in C
+
+        # This shader compilation is more explicit than the one used in
+        # framework.cpp, which relies on a glutil wrapper function.
+        # This is made explicit here mainly to decrease dependence on pyOpenGL
+        # utilities and wrappers, which docs caution may change in future versions.
+        gl.glCompileShader(shader)
+
+        status = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
+        if status == gl.GL_FALSE:
+            # Note that getting the error log is much simpler in Python than in C/C++
+            # and does not require explicit handling of the string buffer
+            strInfoLog = gl.glGetShaderInforLog(shader)
+            strShaderType = ""
+            if shaderType is gl.GL_VERTEX_SHADER:
+                strShaderType = "vertex"
+            elif shaderType is gl.GL_GEOMETRY_SHADER:
+                strShaderType = "geometry"
+            elif shaderType is gl.GL_FRAGMENT_SHADER:
+                strShaderType = "fragment"
+
+            print("Compilation failure for " + strShaderType + " shader:\n" + strInfoLog)
+
+        return shader
+
     # this function runs every time something on the GL window changes
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -359,12 +437,15 @@ class MakeGLWidget(QOpenGLWidget):
                 # add in our axis
                 gl.glCallList(self.axis)
         else:
-            # http://doc.qt.io/qt-5/qopenglshaderprogram.html
-            self.shaderProgram = QOpenGLShaderProgram()
-            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Vertex, self.vertexFile)
-            self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Fragment, self.fragmentFile)
-            # don't bind the shader just yet. We need to draw the axis first
-            self.shaderProgram.release()
+            # don't use a shader program while we draw the axes
+            gl.glUseProgram(0)
+
+            shaderList = []
+            shaderList.append(self.loadShader(gl.GL_VERTEX_SHADER, self.vertexFile))
+            shaderList.append(self.loadShader(gl.GL_FRAGMENT_SHADER, self.fragmentFile))
+            program = self.createProgram(shaderList)
+            for shader in shaderList:
+                gl.glDeleteShader(shader)
 
             gl.glTranslated(0.0, 0.0, -10.0)
             gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
@@ -376,7 +457,16 @@ class MakeGLWidget(QOpenGLWidget):
                 gl.glCallList(self.axis)
 
             # bind the shader program
-            self.shaderProgram.bind()
+            gl.glUseProgram(program)
+
+            # for every program
+            for x in range(0, len(self.uniformVariables)):
+                # for every variable in that program
+                for y in range(0, len(self.uniformVariables[x]["variables"])):
+                    # get the name of that variable
+                    uniformVariable = gl.glGetUniformLocation(program, self.uniformVariables[x]["variables"][y]["name"])
+                    # set the uniform value
+                    gl.glUniform1f(uniformVariable, self.uniformVariables[x]["variables"][y]["value"]/100.0)
 
             # for every command in the glib file
             for command in self.glibContents:
