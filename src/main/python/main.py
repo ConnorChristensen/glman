@@ -109,12 +109,15 @@ class Window(QWidget):
         self.ySlider = self.createSlider(0, 360 * 16)
         self.zSlider = self.createSlider(0, 360 * 16)
 
-        # connect a value changed listener to the sliders
-        self.xSlider.valueChanged.connect(self.glWidget.setXRotation)
+        # the connect function takes in a single value, which is the new value
+        # of the slider when it is changed.
+        # use a lambda function to connect set the rotation on the axes and
+        # send in the new value to be used for that element
+        self.xSlider.valueChanged.connect( lambda newValue: self.glWidget.setRotation('x', newValue))
         self.glWidget.xRotationChanged.connect(self.xSlider.setValue)
-        self.ySlider.valueChanged.connect(self.glWidget.setYRotation)
+        self.ySlider.valueChanged.connect( lambda newValue: self.glWidget.setRotation('y', newValue))
         self.glWidget.yRotationChanged.connect(self.ySlider.setValue)
-        self.zSlider.valueChanged.connect(self.glWidget.setZRotation)
+        self.zSlider.valueChanged.connect( lambda newValue: self.glWidget.setRotation('z', newValue))
         self.glWidget.zRotationChanged.connect(self.zSlider.setValue)
 
         # set the value of the slider now that they are linked
@@ -128,8 +131,7 @@ class Window(QWidget):
         # a horizontal layout for some check boxes
         checkBoxes = QHBoxLayout()
 
-        # create an axes box and connect a state changed listener to the
-        # glWidget
+        # create an axes box and connect a state changed listener to the glWidget
         self.axesCheckbox = self.makeCheckBox("Axes")
         self.axesCheckbox.setCheckState(Qt.Checked)
         self.axesCheckbox.stateChanged.connect(self.glWidget.toggleAxes)
@@ -222,9 +224,13 @@ class MakeGLWidget(QOpenGLWidget):
         super(MakeGLWidget, self).__init__(parent)
 
         self.axes = 0
-        self.xRot = 0
-        self.yRot = 0
-        self.zRot = 0
+
+        self.rotation = {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        }
+
         self.axesOn = 2
 
         self.programOn = False
@@ -294,25 +300,17 @@ class MakeGLWidget(QOpenGLWidget):
         self.programOn = True
         self.update()
 
-    def setXRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.xRot:
-            self.xRot = angle
-            self.xRotationChanged.emit(angle)
-            self.update()
 
-    def setYRotation(self, angle):
+    def setRotation(self, axis, angle):
         angle = self.normalizeAngle(angle)
-        if angle != self.yRot:
-            self.yRot = angle
-            self.yRotationChanged.emit(angle)
-            self.update()
-
-    def setZRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.zRot:
-            self.zRot = angle
-            self.zRotationChanged.emit(angle)
+        if angle != self.rotation[axis]:
+            self.rotation[axis] = angle
+            if axis == 'x':
+                self.xRotationChanged.emit(angle)
+            elif axis == 'y':
+                self.yRotationChanged.emit(angle)
+            elif axis == 'z':
+                self.zRotationChanged.emit(angle)
             self.update()
 
     def initializeGL(self):
@@ -342,9 +340,9 @@ class MakeGLWidget(QOpenGLWidget):
         # if we never loaded in a glib file
         if self.glibFile == "":
             gl.glTranslated(0.0, 0.0, -10.0)
-            gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-            gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-            gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+            gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
+            gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
+            gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
             # if the box is checked
             if (self.axesOn == 2):
                 gl.glCallList(self.axes)
@@ -357,9 +355,9 @@ class MakeGLWidget(QOpenGLWidget):
             self.shaderProgram.release()
 
             gl.glTranslated(0.0, 0.0, -10.0)
-            gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-            gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-            gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+            gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
+            gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
+            gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
 
             # if the box is checked for axes on
             if (self.axesOn == 2):
@@ -397,11 +395,11 @@ class MakeGLWidget(QOpenGLWidget):
         dy = event.y() - self.lastPos.y()
 
         if event.buttons() & Qt.LeftButton:
-            self.setXRotation(self.xRot + 8 * dy)
-            self.setYRotation(self.yRot + 8 * dx)
+            self.setRotation('x', self.rotation['x'] + 8 * dy)
+            self.setRotation('y', self.rotation['y'] + 8 * dx)
         elif event.buttons() & Qt.RightButton:
-            self.setXRotation(self.xRot + 8 * dy)
-            self.setZRotation(self.zRot + 8 * dx)
+            self.setRotation('x', self.rotation['x'] + 8 * dy)
+            self.setRotation('z', self.rotation['z'] + 8 * dx)
 
         self.lastPos = event.pos()
 
