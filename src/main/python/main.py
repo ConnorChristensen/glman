@@ -313,26 +313,35 @@ class MakeGLWidget(QOpenGLWidget):
                 self.zRotationChanged.emit(angle)
             self.update()
 
+    # initialize the GL context. This is only called once on setup
     def initializeGL(self):
+        # print the information that the operating system can support
         print(self.getOpenglInfo())
 
+        # set the background to a dark grey
         self.setClearColor(self.backgroundColor.darker())
+
         # create an arrows object (call list)
         self.axis = self.Arrow()
+
         gl.glShadeModel(gl.GL_SMOOTH)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_CULL_FACE)
 
+    # evaluate a shape written in the glib file
     def evaluateShape(self, command):
+        # get the name of the shape (function) from the glib file
         function = self.glibCommandToFunction(command)
+        # call the function associated with the name
         gl.glCallList(eval(function))
 
     def evaluateCommand(self, command):
-        # if it is a shape
+        # if the shape we got is in the list of available shapes
         if command[0] in self.availableShapes:
+            # call the command associated with that shape
             self.evaluateShape(command)
 
-    # every time the screen reloads
+    # this function runs every time something on the GL window changes
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
@@ -340,11 +349,14 @@ class MakeGLWidget(QOpenGLWidget):
         # if we never loaded in a glib file
         if self.glibFile == "":
             gl.glTranslated(0.0, 0.0, -10.0)
+            # set the rotations
             gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
             gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
             gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
+
             # if the box is checked
             if (self.axisOn == 2):
+                # add in our axis
                 gl.glCallList(self.axis)
         else:
             # http://doc.qt.io/qt-5/qopenglshaderprogram.html
@@ -366,9 +378,12 @@ class MakeGLWidget(QOpenGLWidget):
             # bind the shader program
             self.shaderProgram.bind()
 
+            # for every command in the glib file
             for command in self.glibContents:
+                # evaluate and run the command
                 self.evaluateCommand(command)
 
+    # whenever the screen is resized
     def resizeGL(self, width, height):
         # get the smallest edge
         minSide = min(width, height)
