@@ -111,7 +111,7 @@ class Window(QWidget):
 
         # the connect function takes in a single value, which is the new value
         # of the slider when it is changed.
-        # use a lambda function to connect set the rotation on the axes and
+        # use a lambda function to connect set the rotation on the axis and
         # send in the new value to be used for that element
         self.xSlider.valueChanged.connect( lambda newValue: self.glWidget.setRotation('x', newValue))
         self.glWidget.xRotationChanged.connect(self.xSlider.setValue)
@@ -131,13 +131,13 @@ class Window(QWidget):
         # a horizontal layout for some check boxes
         checkBoxes = QHBoxLayout()
 
-        # create an axes box and connect a state changed listener to the glWidget
-        self.axesCheckbox = self.makeCheckBox("Axes")
-        self.axesCheckbox.setCheckState(Qt.Checked)
-        self.axesCheckbox.stateChanged.connect(self.glWidget.toggleAxes)
+        # create an axis box and connect a state changed listener to the glWidget
+        self.axisCheckbox = self.makeCheckBox("Axes")
+        self.axisCheckbox.setCheckState(Qt.Checked)
+        self.axisCheckbox.stateChanged.connect(self.glWidget.toggleAxes)
 
-        checkBoxes.addWidget(self.axesCheckbox)
         checkBoxes.addWidget(self.makeCheckBox("Orthographic"))
+        checkBoxes.addWidget(self.axisCheckbox)
         controlBar.addLayout(checkBoxes)
 
         loadGlibButton = QPushButton("Load GLIB File")
@@ -223,7 +223,7 @@ class MakeGLWidget(QOpenGLWidget):
     def __init__(self, parent=None):
         super(MakeGLWidget, self).__init__(parent)
 
-        self.axes = 0
+        self.axis = 0
 
         self.rotation = {
             "x": 0,
@@ -231,7 +231,7 @@ class MakeGLWidget(QOpenGLWidget):
             "z": 0
         }
 
-        self.axesOn = 2
+        self.axisOn = 2
 
         self.programOn = False
 
@@ -268,7 +268,7 @@ class MakeGLWidget(QOpenGLWidget):
         return QSize(4000, 4000)
 
     def toggleAxes(self, value):
-        self.axesOn = value
+        self.axisOn = value
         self.update()
 
     def glibCommandToFunction(self, command):
@@ -318,7 +318,7 @@ class MakeGLWidget(QOpenGLWidget):
 
         self.setClearColor(self.backgroundColor.darker())
         # create an arrows object (call list)
-        self.axes = self.Arrow()
+        self.axis = self.Arrow()
         gl.glShadeModel(gl.GL_SMOOTH)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_CULL_FACE)
@@ -344,14 +344,14 @@ class MakeGLWidget(QOpenGLWidget):
             gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
             gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
             # if the box is checked
-            if (self.axesOn == 2):
-                gl.glCallList(self.axes)
+            if (self.axisOn == 2):
+                gl.glCallList(self.axis)
         else:
             # http://doc.qt.io/qt-5/qopenglshaderprogram.html
             self.shaderProgram = QOpenGLShaderProgram()
             self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Vertex, self.vertexFile)
             self.shaderProgram.addShaderFromSourceFile(QOpenGLShader.Fragment, self.fragmentFile)
-            # don't bind the shader just yet. We need to draw the axes first
+            # don't bind the shader just yet. We need to draw the axis first
             self.shaderProgram.release()
 
             gl.glTranslated(0.0, 0.0, -10.0)
@@ -359,9 +359,9 @@ class MakeGLWidget(QOpenGLWidget):
             gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
             gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
 
-            # if the box is checked for axes on
-            if (self.axesOn == 2):
-                gl.glCallList(self.axes)
+            # if the box is checked for axis on
+            if (self.axisOn == 2):
+                gl.glCallList(self.axis)
 
             # bind the shader program
             self.shaderProgram.bind()
