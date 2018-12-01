@@ -253,11 +253,13 @@ class Window(QWidget):
         dialog = QFileDialog()
         # it returns a tuple with the path and the filter type
         self.glibFile = dialog.getOpenFileName()[0]
-        self.glibContents = parseGLIB(self.glibFile)
-        self.addSliders(parseUniformVariables(self.glibContents))
+        # if the user did not cancel the file selection
+        if (self.glibFile != ''):
+            self.glibContents = parseGLIB(self.glibFile)
+            self.addSliders(parseUniformVariables(self.glibContents))
 
-        # now that we have the glib location, load it in
-        self.glWidget.loadGLIB(self.glibFile)
+            # now that we have the glib location, load it in
+            self.glWidget.loadGLIB(self.glibFile)
 
 class MakeGLWidget(QOpenGLWidget):
     # these are signals that are emitted to make connections
