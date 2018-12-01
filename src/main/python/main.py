@@ -21,6 +21,18 @@ import inspect
 
 import OpenGL.GL as gl
 
+# generate and show a popup error message box
+def generateErrorMessage(label, text, moreDetails=""):
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Critical)
+    msg.setText("Error: " + text)
+    msg.setStyleSheet("QLabel { color : white; }")
+    msg.setWindowTitle(label)
+    # if we have more details to show
+    if moreDetails != "":
+        msg.setDetailedText(moreDetails)
+    msg.exec_()
+
 def denormalizeSliderRange(min, value, max):
     range = max - min
     step = range / 100.0
@@ -285,6 +297,7 @@ class MakeGLWidget(QOpenGLWidget):
 
         self.lastPos = QPoint()
 
+        self.workingDirectory = ""
         self.glibFile = ""
         self.glibContents = ""
 
@@ -333,21 +346,46 @@ class MakeGLWidget(QOpenGLWidget):
 
     def loadGLIB(self, glibFile):
         self.glibFile = glibFile
+        # get the directory that the glib file comes from so we can look for shaders
+        self.workingDirectory = os.path.dirname(self.glibFile)
         self.glibContents = parseGLIB(glibFile)
 
+        # to keep track of whether we have a missing file
+        missingShader = False
+
+        # for every line in our glib file
         for line in self.glibContents:
+            # if the line starts with the keyword Vertex, we will be loading a
+            # vertex file
             if line[0] == 'Vertex':
-                self.vertexFile = line[1] + '.vert'
-                print("Loaded ", self.vertexFile)
-                self.vertOn = True
+                # add the absolute path, and the file name
+                self.vertexFile = self.workingDirectory + '/' + line[1] + '.vert'
+                print("Looking for", self.vertexFile)
+
+                # if the file exists
+                if os.path.isfile(self.vertexFile):
+                    print("Found", self.vertexFile)
+                    self.vertOn = True
+                else:
+                    missingShader = True
+                    generateErrorMessage("Missing Shader", "Could not find your vertex shader file. Aborting loading the files")
+
             if line[0] == 'Fragment':
-                self.fragmentFile = line[1] + '.frag'
-                print("Loaded ", self.fragmentFile)
-                self.fragOn = True
+                self.fragmentFile = self.workingDirectory + '/' + line[1] + '.frag'
+                print("Looking for", self.fragmentFile)
+                if os.path.isfile(self.fragmentFile):
+                    print("Found", self.fragmentFile)
+                    self.fragOn = True
+                else:
+                    missingShader = True
+                    generateErrorMessage("Missing Shader", "Could not find your fragment shader file. Aborting loading the files")
 
         self.uniformVariables = parseUniformVariables(self.glibContents)
 
-        self.programOn = True
+        # if we are not missing a shader, turn on the shader program
+        if not missingShader:
+            self.programOn = True
+
         self.update()
 
     def setUniformVariable(self, program, variableName, value):
@@ -416,21 +454,14 @@ class MakeGLWidget(QOpenGLWidget):
 
         return program
 
-    def findFileOrThrow(self, strBasename):
-        # Keep constant names in C-style convention, for readability
-        # when comparing to C(/C++) code.
-        strFilename = "." + os.sep + strBasename
-        if os.path.isfile(strFilename):
-            return strFilename
-
-        raise IOError('Could not find target file ' + strBasename)
-
     def loadShader(self, shaderType, shaderFile):
-        # check if file exists, get full path name
-        strFilename = self.findFileOrThrow(shaderFile)
-        shaderData = None
-        with open(strFilename, 'r') as f:
-            shaderData = f.read()
+        if os.path.isfile(shaderFile):
+            with open(shaderFile, 'r') as f:
+                shaderData = f.read()
+        else:
+            # this should have been taken care of already, but this is here just
+            # incase
+            raise IOError("Could not find shader file")
 
         shader = gl.glCreateShader(shaderType)
         gl.glShaderSource(shader, shaderData) # note that this is a simpler function call than in C
@@ -463,7 +494,7 @@ class MakeGLWidget(QOpenGLWidget):
         gl.glLoadIdentity()
 
         # if we never loaded in a glib file
-        if self.glibFile == "":
+        if not self.programOn:
             gl.glTranslated(0.0, 0.0, -10.0)
             # set the rotations
             gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
