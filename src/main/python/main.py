@@ -406,7 +406,6 @@ class MakeGLWidget(QOpenGLWidget):
         if status == gl.GL_FALSE:
             # Note that getting the error log is much simpler in Python than in C/C++
             # and does not require explicit handling of the string buffer
-            strInfoLog = gl.glGetShaderInforLog(shader)
             strShaderType = ""
             if shaderType is gl.GL_VERTEX_SHADER:
                 strShaderType = "vertex"
@@ -415,7 +414,7 @@ class MakeGLWidget(QOpenGLWidget):
             elif shaderType is gl.GL_FRAGMENT_SHADER:
                 strShaderType = "fragment"
 
-            print("Compilation failure for " + strShaderType + " shader:\n" + strInfoLog)
+            print("Compilation failure for " + strShaderType + " shader:\n")
 
         return shader
 
