@@ -21,6 +21,20 @@ import inspect
 
 import OpenGL.GL as gl
 
+def denormalizeSliderRange(min, value, max):
+    range = max - min
+    step = range / 100.0
+    return value * step
+
+def normalizeSliderRange(min, value, max):
+    range = max - min
+    step = range / 100.0
+    mult = 1 / step
+    normalMin = int(math.floor(min * mult))
+    normalMax = int(math.floor(max * mult))
+    normalValue = int(math.floor(value * mult))
+    return (normalMin, normalValue, normalMax)
+
 # returns a list of lines, each line split by white space into a list
 def parseGLIB(glibFile):
     # read our glib file
@@ -187,10 +201,12 @@ class Window(QWidget):
                 # if we see variables
                 if key == "variables":
                     for variable in value:
+                        # convert the floats to an integer range
+                        sliderRange = normalizeSliderRange(variable["min"], variable["value"], variable["max"])
                         # make a slider with a min and max value
-                        slider = self.createSlider(variable["min"], variable["max"]*100)
+                        slider = self.createSlider(sliderRange[0], sliderRange[2])
                         # set the slider to the default variable
-                        slider.setValue(variable["value"])
+                        slider.setValue(sliderRange[1])
                         # make a label for our slider
                         label = QLabel()
                         # set our label name
@@ -485,8 +501,11 @@ class MakeGLWidget(QOpenGLWidget):
                 for y in range(0, len(self.uniformVariables[x]["variables"])):
                     # get the name of that variable
                     uniformVariable = gl.glGetUniformLocation(program, self.uniformVariables[x]["variables"][y]["name"])
+
+                    value = denormalizeSliderRange(self.uniformVariables[x]["variables"][y]["min"], self.uniformVariables[x]["variables"][y]["value"], self.uniformVariables[x]["variables"][y]["max"])
+
                     # set the uniform value
-                    gl.glUniform1f(uniformVariable, self.uniformVariables[x]["variables"][y]["value"]/100.0)
+                    gl.glUniform1f(uniformVariable, value)
 
             # for every command in the glib file
             for command in self.glibContents:
