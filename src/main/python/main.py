@@ -110,6 +110,24 @@ class Window(QWidget):
         self.ySlider = self.createSlider(0, 360 * 16)
         self.zSlider = self.createSlider(0, 360 * 16)
 
+        self.xLabel = QLabel()
+        # set our xLabel name
+        self.xLabel.setText("x")
+        # make the text white and center it on the menu
+        self.xLabel.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+
+        self.yLabel = QLabel()
+        # set our yLabel name
+        self.yLabel.setText("y")
+        # make the text white and center it on the menu
+        self.yLabel.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+
+        self.zLabel = QLabel()
+        # set our zLabel name
+        self.zLabel.setText("z")
+        # make the text white and center it on the menu
+        self.zLabel.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+
         # the connect function takes in a single value, which is the new value
         # of the slider when it is changed.
         # use a lambda function to connect set the rotation on the axis and
@@ -149,8 +167,11 @@ class Window(QWidget):
 
         controlBar.addWidget(loadGlibButton)
         controlBar.addWidget(reloadGlibButton)
+        controlBar.addWidget(self.xLabel)
         controlBar.addWidget(self.xSlider)
+        controlBar.addWidget(self.yLabel)
         controlBar.addWidget(self.ySlider)
+        controlBar.addWidget(self.zLabel)
         controlBar.addWidget(self.zSlider)
         return controlBar
 
