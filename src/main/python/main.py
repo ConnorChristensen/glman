@@ -135,6 +135,7 @@ class Window(QWidget):
         self.xSlider = self.createSlider(0, 360 * 16)
         self.ySlider = self.createSlider(0, 360 * 16)
         self.zSlider = self.createSlider(0, 360 * 16)
+        self.zoomSlider= self.createSlider(1, 500)
 
         self.xLabel = QLabel()
         # set our xLabel name
@@ -164,6 +165,10 @@ class Window(QWidget):
         self.glWidget.yRotationChanged.connect(self.ySlider.setValue)
         self.zSlider.valueChanged.connect( lambda newValue: self.glWidget.setRotation('z', newValue))
         self.glWidget.zRotationChanged.connect(self.zSlider.setValue)
+
+        # connect the zoom slider to the variable that goes into the glScale function
+        self.zoomSlider.valueChanged.connect(self.glWidget.changeZoom)
+        self.glWidget.zoomChanged.connect(self.zoomSlider.setValue)
 
         # set the value of the slider now that they are linked
         self.xSlider.setValue(23  * 16)
@@ -199,6 +204,7 @@ class Window(QWidget):
         controlBar.addWidget(self.ySlider)
         controlBar.addWidget(self.zLabel)
         controlBar.addWidget(self.zSlider)
+        controlBar.addWidget(self.zoomSlider)
         return controlBar
 
     def addSliders(self, programs):
@@ -278,6 +284,7 @@ class MakeGLWidget(QOpenGLWidget):
     xRotationChanged = pyqtSignal(int)
     yRotationChanged = pyqtSignal(int)
     zRotationChanged = pyqtSignal(int)
+    zoomChanged = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super(MakeGLWidget, self).__init__(parent)
@@ -300,6 +307,8 @@ class MakeGLWidget(QOpenGLWidget):
         self.workingDirectory = ""
         self.glibFile = ""
         self.glibContents = ""
+
+        self.scale = 1
 
         # get all functions in the shapes module
         self.availableShapes = inspect.getmembers(shapes, inspect.isfunction)
@@ -392,6 +401,11 @@ class MakeGLWidget(QOpenGLWidget):
         for variable in self.uniformVariables[program]["variables"]:
             if variable["name"] == variableName:
                 variable["value"] = value;
+        self.update()
+
+    def changeZoom(self, value):
+        self.scale = value / 100.0
+        self.zoomChanged.emit(value)
         self.update()
 
     def setRotation(self, axis, angle):
@@ -500,6 +514,7 @@ class MakeGLWidget(QOpenGLWidget):
             gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
             gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
             gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
+            gl.glScalef(self.scale, self.scale, self.scale)
 
             # if the box is checked
             if (self.axisOn == 2):
@@ -520,6 +535,7 @@ class MakeGLWidget(QOpenGLWidget):
             gl.glRotated(self.rotation['x'] / 16.0, 1.0, 0.0, 0.0)
             gl.glRotated(self.rotation['y'] / 16.0, 0.0, 1.0, 0.0)
             gl.glRotated(self.rotation['z'] / 16.0, 0.0, 0.0, 1.0)
+            gl.glScalef(self.scale, self.scale, self.scale)
 
             # if the box is checked for axis on
             if (self.axisOn == 2):
