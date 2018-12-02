@@ -33,6 +33,14 @@ def generateErrorMessage(label, text, moreDetails=""):
         msg.setDetailedText(moreDetails)
     msg.exec_()
 
+def makeSliderLabel(text):
+    slider = QLabel()
+    # set our name
+    slider.setText(text)
+    # make the text white and center it on the menu
+    slider.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+    return slider
+
 def denormalizeSliderRange(min, value, max):
     range = max - min
     step = range / 100.0
@@ -137,23 +145,9 @@ class Window(QWidget):
         self.zSlider = self.createSlider(0, 360 * 16)
         self.zoomSlider= self.createSlider(1, 500)
 
-        self.xLabel = QLabel()
-        # set our xLabel name
-        self.xLabel.setText("x")
-        # make the text white and center it on the menu
-        self.xLabel.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
-
-        self.yLabel = QLabel()
-        # set our yLabel name
-        self.yLabel.setText("y")
-        # make the text white and center it on the menu
-        self.yLabel.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
-
-        self.zLabel = QLabel()
-        # set our zLabel name
-        self.zLabel.setText("z")
-        # make the text white and center it on the menu
-        self.zLabel.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+        self.xLabel = makeSliderLabel('x')
+        self.yLabel = makeSliderLabel('y')
+        self.zLabel = makeSliderLabel('z')
 
         # the connect function takes in a single value, which is the new value
         # of the slider when it is changed.
