@@ -26,7 +26,7 @@ def generateErrorMessage(label, text, moreDetails=""):
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Critical)
     msg.setText("Error: " + text)
-    msg.setStyleSheet("QLabel { color : white; }")
+    msg.setStyleSheet("QLabel { }")
     msg.setWindowTitle(label)
     # if we have more details to show
     if moreDetails != "":
@@ -38,7 +38,7 @@ def makeSliderLabel(text):
     # set our name
     slider.setText(text)
     # make the text white and center it on the menu
-    slider.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+    slider.setStyleSheet("QLabel { qproperty-alignment: AlignCenter; }")
     return slider
 
 def denormalizeSliderRange(min, value, max):
@@ -220,11 +220,7 @@ class Window(QWidget):
                         # set the slider to the default variable
                         slider.setValue(sliderRange[1])
                         # make a label for our slider
-                        label = QLabel()
-                        # set our label name
-                        label.setText(variable["name"])
-                        # make the text white and center it on the menu
-                        label.setStyleSheet("QLabel { color : white; qproperty-alignment: AlignCenter; }")
+                        label = makeSliderLabel(variable["name"])
 
                         # define the program and variable names as variables
                         variableName = variable["name"]
@@ -251,7 +247,6 @@ class Window(QWidget):
         checkBox.setStyleSheet("""
             QCheckBox {
                border: none;
-               color: white;
             }""")
         return checkBox
 
