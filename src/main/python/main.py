@@ -289,7 +289,8 @@ class Window(QWidget):
             self.addSliders(parseUniformVariables(self.glibContents))
 
             # now that we have the glib location, load it in
-            self.glWidget.loadGLIB(self.glibFile)
+            self.glWidget.setGLIB(self.glibFile)
+            self.glWidget.loadGLIB()
 
 class MakeGLWidget(QOpenGLWidget):
     # these are signals that are emitted to make connections
@@ -365,12 +366,13 @@ class MakeGLWidget(QOpenGLWidget):
         function += command[-1] + ")"
         return function
 
-    def loadGLIB(self, glibFile):
+    def setGLIB(self, glibFile):
         self.glibFile = glibFile
         # get the directory that the glib file comes from so we can look for shaders
         self.workingDirectory = os.path.dirname(self.glibFile)
         self.glibContents = parseGLIB(glibFile)
 
+    def loadGLIB(self):
         # to keep track of whether we have a missing file
         missingShader = False
 
