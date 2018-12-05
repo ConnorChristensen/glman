@@ -3,7 +3,7 @@
 varying vec3 vColor, vN, vL, vE;
 varying vec2 vST;
 
-const float uShininess = 0.8, uKa = 0.3, uKd = 0.1, uKs = 0.1;
+uniform float uShininess, uKa, uKd, uKs;
 const vec3 uColor = vec3(0.0, 0.9, 0.9), uSpecularColor = vec3(1.0, 0.5, 0.5);
 
 

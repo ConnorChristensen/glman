@@ -85,7 +85,7 @@ def parseUniformVariables(glibContents):
             exit(1)
 
         # if we got to a program
-        if line[0] == "Program":
+        if line[0].lower() == "program":
             programs.append({})
             # get our program name
             programs[programNumber]["name"] = line[1]
@@ -380,7 +380,7 @@ class MakeGLWidget(QOpenGLWidget):
         for line in self.glibContents:
             # if the line starts with the keyword Vertex, we will be loading a
             # vertex file
-            if line[0] == 'Vertex':
+            if line[0].lower() == 'vertex':
                 # add the absolute path, and the file name
                 self.vertexFile = self.workingDirectory + '/' + line[1] + '.vert'
                 print("Looking for", self.vertexFile)
@@ -393,7 +393,7 @@ class MakeGLWidget(QOpenGLWidget):
                     missingShader = True
                     generateErrorMessage("Missing Shader", "Could not find your vertex shader file. Aborting loading the files")
 
-            if line[0] == 'Fragment':
+            if line[0].lower() == 'fragment':
                 self.fragmentFile = self.workingDirectory + '/' + line[1] + '.frag'
                 print("Looking for", self.fragmentFile)
                 if os.path.isfile(self.fragmentFile):
