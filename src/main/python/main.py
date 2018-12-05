@@ -121,13 +121,17 @@ class Window(QWidget):
 
         self.glWidget = MakeGLWidget()
 
-        # create our main layout
+        # create our horizontal main layout
         self.mainLayout = QHBoxLayout()
         self.mainLayout.addWidget(self.glWidget)
 
         # expand the glWidget to fill all available space
         self.glWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # this is a container that will hold all our uniform variable sliders
+        self.uniformVariableSliders = QVBoxLayout()
+
+        # this is where we will hold all our control systems
         self.controlBar = self.makeControlBar()
 
         # add the vertical layout
@@ -148,6 +152,7 @@ class Window(QWidget):
         self.xLabel = makeSliderLabel('x')
         self.yLabel = makeSliderLabel('y')
         self.zLabel = makeSliderLabel('z')
+        self.zoomLabel = makeSliderLabel('zoom')
 
         # the connect function takes in a single value, which is the new value
         # of the slider when it is changed.
@@ -198,14 +203,28 @@ class Window(QWidget):
         controlBar.addWidget(self.ySlider)
         controlBar.addWidget(self.zLabel)
         controlBar.addWidget(self.zSlider)
+        controlBar.addWidget(self.zoomLabel)
         controlBar.addWidget(self.zoomSlider)
         return controlBar
+
+    # remove all child elements from the layout
+    def clearLayout(self, layout):
+        # remove them in reverse order so that it does not shift the contents
+        # around while they are being removed
+        for i in reversed(range(layout.count())):
+            # when you set the parent to None, the cleaner automatically removes
+            # the widget
+            layout.itemAt(i).widget().setParent(None)
+
+        return layout
 
     def addSliders(self, programs):
         variableSliders = []
         sliderLabels = []
 
         programNumber = 0
+
+        self.uniformVariableSliders = self.clearLayout(self.uniformVariableSliders)
 
         # for every program we have
         for program in programs:
@@ -236,10 +255,14 @@ class Window(QWidget):
             print("Error: the number of sliders and labels do not match")
             exit(1)
 
+        # only add in our uniform variable sliders if a program exists
+        if programNumber > 0:
+            self.controlBar.addLayout(self.uniformVariableSliders)
+
         # for every slider and label
         for x in range(0,len(variableSliders)):
-            self.controlBar.addWidget(sliderLabels[x])
-            self.controlBar.addWidget(variableSliders[x])
+            self.uniformVariableSliders.addWidget(sliderLabels[x])
+            self.uniformVariableSliders.addWidget(variableSliders[x])
 
     def makeCheckBox(self, label):
         checkBox = QCheckBox(label)
