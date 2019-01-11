@@ -76,6 +76,9 @@ def cube(dx, dy, dz):
     gl.glEndList()
     return genList
 
+def box(dx, dy, dz):
+    cube(dx, dy, dz)
+
 class Point(object):
     def __init__(self):
         super(Point, self).__init__()
