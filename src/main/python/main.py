@@ -356,7 +356,7 @@ class MakeGLWidget(QOpenGLWidget):
 
     def glibCommandToFunction(self, command):
         # get the function name
-        function = command[0] + "("
+        function = command[0].lower() + "("
         # start at the first argument and add in all the arguments that
         # have a comma after them
         for x in range(1,len(command) - 1):
